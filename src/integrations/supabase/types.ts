@@ -16,17 +16,23 @@ export type Database = {
     Tables: {
       feedback: {
         Row: {
+          category: string
           created_at: string
+          department: string
           id: string
           message: string
         }
         Insert: {
+          category?: string
           created_at?: string
+          department?: string
           id?: string
           message: string
         }
         Update: {
+          category?: string
           created_at?: string
+          department?: string
           id?: string
           message?: string
         }
