@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   LogOut, Download, MessageSquare, Lock, Trash2, FileSpreadsheet,
-  FileText, FileDown, RefreshCw, Filter, Search
+  FileText, FileDown, RefreshCw, Search
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Session } from "@supabase/supabase-js";
@@ -31,8 +31,6 @@ const Admin = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [filterDepartment, setFilterDepartment] = useState("");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -79,21 +77,15 @@ const Admin = () => {
     }
   };
 
-  const filtered = feedbacks.filter((f) => {
-    const matchSearch = f.message.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCat = !filterCategory || f.category === filterCategory;
-    const matchDept = !filterDepartment || f.department === filterDepartment;
-    return matchSearch && matchCat && matchDept;
-  });
-
-  const categories = [...new Set(feedbacks.map((f) => f.category))];
-  const departments = [...new Set(feedbacks.map((f) => f.department))];
+  const filtered = feedbacks.filter((f) =>
+    f.message.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const exportCSV = () => {
     if (filtered.length === 0) { toast.error("No data to export."); return; }
-    const header = "ID,Category,Department,Message,Submitted At\n";
+    const header = "ID,Message,Submitted At\n";
     const rows = filtered.map((f) =>
-      `"${f.id}","${f.category}","${f.department}","${f.message.replace(/"/g, '""')}","${new Date(f.created_at).toLocaleString()}"`
+      `"${f.id}","${f.message.replace(/"/g, '""')}","${new Date(f.created_at).toLocaleString()}"`
     ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     saveAs(blob, `feedback_${new Date().toISOString().slice(0, 10)}.csv`);
@@ -103,8 +95,9 @@ const Admin = () => {
   const exportExcel = () => {
     if (filtered.length === 0) { toast.error("No data to export."); return; }
     const ws = XLSX.utils.json_to_sheet(filtered.map((f, i) => ({
-      "#": i + 1, Category: f.category, Department: f.department,
-      Message: f.message, "Submitted At": new Date(f.created_at).toLocaleString()
+      "#": i + 1,
+      Message: f.message,
+      "Submitted At": new Date(f.created_at).toLocaleString()
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Feedback");
@@ -122,9 +115,9 @@ const Admin = () => {
     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
     autoTable(doc, {
       startY: 35,
-      head: [["#", "Category", "Department", "Message", "Date"]],
+      head: [["#", "Message", "Date"]],
       body: filtered.map((f, i) => [
-        i + 1, f.category, f.department, f.message, new Date(f.created_at).toLocaleString()
+        i + 1, f.message, new Date(f.created_at).toLocaleString()
       ]),
       styles: { fontSize: 8 },
       headStyles: { fillColor: [27, 42, 74] },
@@ -158,7 +151,7 @@ const Admin = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="text-center mb-6">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/20 border border-primary/30">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.15] border border-white/[0.25]">
               <Lock className="h-7 w-7 text-primary" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">Admin Login</h1>
@@ -166,9 +159,9 @@ const Admin = () => {
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required
-              className="glass bg-white/5 border-white/10" />
+              className="bg-white/[0.08] backdrop-blur-xl border-white/[0.2] focus:border-white/[0.35] placeholder:text-white/40" />
             <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required
-              className="glass bg-white/5 border-white/10" />
+              className="bg-white/[0.08] backdrop-blur-xl border-white/[0.2] focus:border-white/[0.35] placeholder:text-white/40" />
             <Button type="submit" className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90" disabled={loginLoading}>
               {loginLoading ? "Signing in…" : "Sign In"}
             </Button>
@@ -187,31 +180,27 @@ const Admin = () => {
       </div>
 
       {/* Header */}
-      <header className="glass border-b border-white/10 sticky top-0 z-50">
+      <header className="glass border-b border-white/[0.15] sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Logo" className="h-9 w-9 rounded-lg object-contain" />
             <h1 className="text-lg font-bold text-foreground">Feedback Dashboard</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 text-muted-foreground hover:text-foreground">
-              <LogOut className="h-4 w-4" /> Logout
-            </Button>
-          </div>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 text-muted-foreground hover:text-foreground">
+            <LogOut className="h-4 w-4" /> Logout
+          </Button>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           {[
-            { label: "Total", value: feedbacks.length, color: "text-primary" },
-            { label: "Categories", value: categories.length, color: "text-accent" },
-            { label: "Departments", value: departments.length, color: "text-[hsl(160,80%,50%)]" },
-            { label: "This week", value: feedbacks.filter((f) => new Date(f.created_at) > new Date(Date.now() - 7 * 86400000)).length, color: "text-[hsl(40,90%,60%)]" },
+            { label: "Total Feedback", value: feedbacks.length, color: "text-primary" },
+            { label: "This Week", value: feedbacks.filter((f) => new Date(f.created_at) > new Date(Date.now() - 7 * 86400000)).length, color: "text-accent" },
           ].map((stat) => (
-            <motion.div key={stat.label} className="glass rounded-xl p-4 text-center" whileHover={{ scale: 1.02 }}>
-              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+            <motion.div key={stat.label} className="glass rounded-xl p-5 text-center" whileHover={{ scale: 1.02 }}>
+              <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
             </motion.div>
           ))}
@@ -223,35 +212,22 @@ const Admin = () => {
             <div className="flex-1 min-w-[200px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search feedback..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 glass bg-white/5 border-white/10" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
-                className="glass bg-white/5 rounded-lg px-3 py-2 text-sm text-foreground border-white/10 focus:outline-none">
-                <option value="" className="bg-[hsl(220,30%,16%)]">All Categories</option>
-                {categories.map((c) => <option key={c} value={c} className="bg-[hsl(220,30%,16%)]">{c}</option>)}
-              </select>
-              <select value={filterDepartment} onChange={(e) => setFilterDepartment(e.target.value)}
-                className="glass bg-white/5 rounded-lg px-3 py-2 text-sm text-foreground border-white/10 focus:outline-none">
-                <option value="" className="bg-[hsl(220,30%,16%)]">All Departments</option>
-                {departments.map((d) => <option key={d} value={d} className="bg-[hsl(220,30%,16%)]">{d}</option>)}
-              </select>
+                className="pl-9 bg-white/[0.08] backdrop-blur-xl border-white/[0.2] focus:border-white/[0.35] placeholder:text-white/40" />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={fetchFeedbacks} className="gap-2 glass border-white/10 hover:bg-white/10">
+            <Button variant="outline" size="sm" onClick={fetchFeedbacks} className="gap-2 glass border-white/[0.2] hover:bg-white/[0.15]">
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
             </Button>
-            <div className="h-5 w-px bg-white/10" />
+            <div className="h-5 w-px bg-white/[0.15]" />
             <span className="text-xs text-muted-foreground mr-1"><Download className="h-3.5 w-3.5 inline" /> Export:</span>
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 glass border-white/10 hover:bg-white/10">
+            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5 glass border-white/[0.2] hover:bg-white/[0.15]">
               <FileText className="h-3.5 w-3.5" /> CSV
             </Button>
-            <Button variant="outline" size="sm" onClick={exportExcel} className="gap-1.5 glass border-white/10 hover:bg-white/10">
+            <Button variant="outline" size="sm" onClick={exportExcel} className="gap-1.5 glass border-white/[0.2] hover:bg-white/[0.15]">
               <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
             </Button>
-            <Button variant="outline" size="sm" onClick={exportPDF} className="gap-1.5 glass border-white/10 hover:bg-white/10">
+            <Button variant="outline" size="sm" onClick={exportPDF} className="gap-1.5 glass border-white/[0.2] hover:bg-white/[0.15]">
               <FileDown className="h-3.5 w-3.5" /> PDF
             </Button>
             <div className="ml-auto text-xs text-muted-foreground">
@@ -286,18 +262,10 @@ const Admin = () => {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/20 text-primary">
-                          {f.category}
-                        </span>
-                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-accent/20 text-accent">
-                          {f.department}
-                        </span>
-                        <span className="text-xs text-muted-foreground ml-auto">
-                          {new Date(f.created_at).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(f.created_at).toLocaleString()}
+                      </span>
+                      <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed mt-1">
                         {f.message}
                       </p>
                     </div>
@@ -317,7 +285,6 @@ const Admin = () => {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-white/10 py-4 mt-8">
         <div className="container mx-auto px-4 text-center space-y-1">
           <p className="text-xs text-muted-foreground">

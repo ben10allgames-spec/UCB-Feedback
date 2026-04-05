@@ -3,16 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ShieldCheck, Send, MessageSquareText, ChevronDown } from "lucide-react";
+import { ShieldCheck, Send, MessageSquareText } from "lucide-react";
 import { motion } from "framer-motion";
-
-const CATEGORIES = ["General", "Suggestion", "Complaint", "Appreciation", "Bug Report"];
-const DEPARTMENTS = ["General", "Management", "Events", "Marketing", "Tech", "Finance", "Creative"];
 
 const Index = () => {
   const [message, setMessage] = useState("");
-  const [category, setCategory] = useState("");
-  const [department, setDepartment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,31 +16,17 @@ const Index = () => {
       toast.error("Please write your feedback before submitting.");
       return;
     }
-    if (!category) {
-      toast.error("Please select a category.");
-      return;
-    }
-    if (!department) {
-      toast.error("Please select a department.");
-      return;
-    }
 
     setIsSubmitting(true);
     const { error } = await supabase
       .from("feedback")
-      .insert({
-        message: message.trim(),
-        category: category.toLowerCase(),
-        department: department.toLowerCase(),
-      });
+      .insert({ message: message.trim() });
 
     if (error) {
       toast.error("Something went wrong. Please try again.");
     } else {
       toast.success("Thank you! Your feedback has been submitted anonymously.");
       setMessage("");
-      setCategory("");
-      setDepartment("");
     }
     setIsSubmitting(false);
   };
@@ -77,8 +58,8 @@ const Index = () => {
         <div className="container relative mx-auto max-w-3xl px-4 text-center">
           <motion.img
             src="/logo.png"
-            alt="University Canvas of Bangladesh"
-            className="mx-auto mb-6 h-28 w-28 rounded-2xl object-contain bg-white/10 p-2 shadow-lg backdrop-blur-sm border border-white/10"
+            alt="University Canvas of Bangladesh - Anonymous Feedback Platform"
+            className="mx-auto mb-6 h-28 w-28 rounded-2xl object-contain bg-white/[0.15] p-2 shadow-lg backdrop-blur-sm border border-white/[0.2]"
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 15 }}
@@ -122,41 +103,12 @@ const Index = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="relative">
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full appearance-none glass rounded-lg px-4 py-3 text-sm text-foreground bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
-                  >
-                    <option value="" className="bg-[hsl(220,30%,16%)] text-foreground">Select Category</option>
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c} className="bg-[hsl(220,30%,16%)] text-foreground">{c}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                </div>
-                <div className="relative">
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full appearance-none glass rounded-lg px-4 py-3 text-sm text-foreground bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
-                  >
-                    <option value="" className="bg-[hsl(220,30%,16%)] text-foreground">Select Department</option>
-                    {DEPARTMENTS.map((d) => (
-                      <option key={d} value={d} className="bg-[hsl(220,30%,16%)] text-foreground">{d}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                </div>
-              </div>
-
               <Textarea
                 placeholder="Write your feedback here… What can we do better? Any suggestions?"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={6}
-                className="resize-none text-base glass bg-white/5 border-white/10 focus:ring-primary/50"
+                className="resize-none text-base bg-white/[0.08] backdrop-blur-xl border-white/[0.2] focus:ring-primary/50 focus:border-white/[0.35] placeholder:text-white/40"
               />
 
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-3">
